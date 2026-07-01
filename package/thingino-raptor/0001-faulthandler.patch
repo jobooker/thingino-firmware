@@ -1,0 +1,32 @@
+diff --git a/rvd/rvd_main.c b/rvd/rvd_main.c
+index 8e01b35..a619015 100644
+--- a/rvd/rvd_main.c
++++ b/rvd/rvd_main.c
+@@ -36,8 +36,27 @@ void rss_post_banner_hook(const char *name)
+ 	rss_hal_check_platform(name);
+ }
+ 
++#include <signal.h>
++#include <ucontext.h>
++#include <stdio.h>
++static void rvd_fault_handler(int sig, siginfo_t *si, void *uc_v)
++{
++    ucontext_t *uc = (ucontext_t *)uc_v;
++    fprintf(stderr, "FAULTDBG sig=%d addr=%p pc=%llx\n", sig, si->si_addr,
++            (unsigned long long)uc->uc_mcontext.pc);
++    for (int i = 0; i < 32; i++)
++        fprintf(stderr, "FAULTREG r%d=%llx\n", i,
++                (unsigned long long)uc->uc_mcontext.gregs[i]);
++    fflush(stderr);
++    _exit(139);
++}
++
+ int main(int argc, char **argv)
+ {
++    { struct sigaction _sa; memset(&_sa, 0, sizeof(_sa));
++      _sa.sa_sigaction = rvd_fault_handler; _sa.sa_flags = SA_SIGINFO;
++      sigaction(SIGBUS, &_sa, NULL); sigaction(SIGSEGV, &_sa, NULL); }
++
+ 	rss_daemon_ctx_t ctx;
+ 	int ret = rss_daemon_init(&ctx, "rvd", argc, argv, NULL);
+ 	if (ret != 0)
