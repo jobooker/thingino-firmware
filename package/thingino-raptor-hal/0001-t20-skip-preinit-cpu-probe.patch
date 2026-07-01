@@ -1,0 +1,22 @@
+diff --git a/src/hal_common.c b/src/hal_common.c
+index 691789c..5dabf1a 100644
+--- a/src/hal_common.c
++++ b/src/hal_common.c
+@@ -1575,12 +1575,9 @@ const char *rss_hal_get_platform_name(void)
+ 
+ void rss_hal_check_platform(const char *name)
+ {
+-    const char *cpu = IMP_System_GetCPUInfo();
+-    if (!cpu || strncmp(cpu, HAL_PLATFORM_NAME, strlen(HAL_PLATFORM_NAME)) == 0)
+-        return;
+-    fprintf(stderr, "FATAL: built for %s but running on %s\n", HAL_PLATFORM_NAME, cpu);
+-    openlog(name ? name : "raptor", LOG_PID, LOG_DAEMON);
+-    syslog(LOG_ERR, "FATAL: built for %s but running on %s", HAL_PLATFORM_NAME, cpu);
+-    closelog();
+-    _exit(1);
++    /* T20 fix: upstream runs this SoC probe from the post-banner hook, BEFORE
++     * IMP_System_Init(). On T20's old libimp, IMP_System_GetCPUInfo() spins
++     * forever when called pre-Init (fine on T31). We are built for and running
++     * on T20, so skip the probe entirely. */
++    (void)name;
+ }
