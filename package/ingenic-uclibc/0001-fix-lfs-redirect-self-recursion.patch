@@ -1,8 +1,8 @@
 diff --git a/uclibc_shim.c b/uclibc_shim.c
-index 6ef9005..347f336 100644
+index 6ef9005..631bde7 100644
 --- a/uclibc_shim.c
 +++ b/uclibc_shim.c
-@@ -22,6 +22,14 @@
+@@ -22,6 +22,15 @@
  #define DEBUG_PRINT(...) (void)0
  #endif
  
@@ -13,11 +13,12 @@ index 6ef9005..347f336 100644
 +extern FILE *__shim_base_fopen(const char *, const char *) __asm__("fopen");
 +extern int   __shim_base_open(const char *, int, ...) __asm__("open");
 +extern int   __shim_base_fseeko(FILE *, off_t, int) __asm__("fseeko");
++extern int   __shim_base_ftruncate(int, long) __asm__("ftruncate");
 +
  void __pthread_register_cancel(void *buf) {
  	DEBUG_PRINT(stderr, "[WARNING] Called __pthread_register_cancel. This is a shim and does nothing.\n");
  }
-@@ -68,7 +76,7 @@ int __fputc_unlocked(int c, FILE *stream) {
+@@ -68,7 +77,7 @@ int __fputc_unlocked(int c, FILE *stream) {
  
  FILE* fopen64(const char *path, const char *mode) {
  	DEBUG_PRINT(stderr, "[WARNING] Called fopen64. This is a shim and does nothing.\n");
@@ -26,7 +27,7 @@ index 6ef9005..347f336 100644
  }
  
  int open64(const char *path, int flags, ...) {
-@@ -84,15 +92,15 @@ int open64(const char *path, int flags, ...) {
+@@ -84,15 +93,21 @@ int open64(const char *path, int flags, ...) {
  
  	DEBUG_PRINT(stderr, "[WARNING] Called open64. This is a shim and does nothing.\n");
  	if (flags & O_CREAT) {
@@ -42,6 +43,12 @@ index 6ef9005..347f336 100644
  	DEBUG_PRINT(stderr, "[WARNING] Called fseeko64. This is a shim and does nothing.\n");
 -	return fseeko(stream, offset, whence);
 +	return __shim_base_fseeko(stream, offset, whence);
++}
++
++int ftruncate64(int fd, off_t length) {
++	/* base ftruncate takes 32-bit off_t on this uClibc; low 32 bits suffice
++	 * for our sizes and avoids the missing/broken ftruncate64 symbol. */
++	return __shim_base_ftruncate(fd, (long)length);
  }
  
  void* mmap64(void *start, size_t len, int prot, int flags, int fd, uint32_t off) {
