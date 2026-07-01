@@ -1,13 +1,30 @@
 diff --git a/src/rss_ring.c b/src/rss_ring.c
-index 38aae12..b1c05d8 100644
+index 38aae12..2acb0f4 100644
 --- a/src/rss_ring.c
 +++ b/src/rss_ring.c
-@@ -143,6 +143,8 @@ rss_ring_t *rss_ring_create(const char *name, uint32_t slot_count, uint32_t data
+@@ -122,6 +122,7 @@ rss_ring_t *rss_ring_create(const char *name, uint32_t slot_count, uint32_t data
+     ring->shm_fd = -1;
+     ring->ref_fd = -1;
+ 
++    fprintf(stderr, "RINGDBG-in name=%s slots=%u data=%u\n", name, slot_count, data_size); fflush(stderr);
+     char shm_name[128];
+     make_shm_name(shm_name, sizeof(shm_name), name);
+ 
+@@ -136,13 +137,16 @@ rss_ring_t *rss_ring_create(const char *name, uint32_t slot_count, uint32_t data
+     if (ring->shm_fd < 0)
+         goto fail;
+ 
+-    if (ftruncate(ring->shm_fd, (off_t)ring->total_size) < 0)
++    int _ftr = ftruncate(ring->shm_fd, (off_t)ring->total_size);
++    fprintf(stderr, "RINGDBG-ftr name=%s total=%u ret=%d errno=%d\n", name, (unsigned)ring->total_size, _ftr, errno); fflush(stderr);
++    if (_ftr < 0)
+         goto fail;
+ 
+     void *base = mmap(NULL, ring->total_size, PROT_READ | PROT_WRITE, MAP_SHARED, ring->shm_fd, 0);
      if (base == MAP_FAILED)
          goto fail;
  
-+    fprintf(stderr, "RINGDBG name=%s slots=%u data=%u total=%u base=%p\n", name, slot_count, data_size, (unsigned)ring->total_size, base);
-+    fflush(stderr);
++    fprintf(stderr, "RINGDBG-mmap name=%s base=%p\n", name, base); fflush(stderr);
      ring_set_pointers(ring, base, slot_count);
  
      /* Initialise header. Magic written LAST with release ordering
