@@ -1,0 +1,13 @@
+diff --git a/src/rss_ring.c b/src/rss_ring.c
+index 38aae12..b1c05d8 100644
+--- a/src/rss_ring.c
++++ b/src/rss_ring.c
+@@ -143,6 +143,8 @@ rss_ring_t *rss_ring_create(const char *name, uint32_t slot_count, uint32_t data
+     if (base == MAP_FAILED)
+         goto fail;
+ 
++    fprintf(stderr, "RINGDBG name=%s slots=%u data=%u total=%u base=%p\n", name, slot_count, data_size, (unsigned)ring->total_size, base);
++    fflush(stderr);
+     ring_set_pointers(ring, base, slot_count);
+ 
+     /* Initialise header. Magic written LAST with release ordering
